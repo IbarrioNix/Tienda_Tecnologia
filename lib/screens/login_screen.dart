@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'home_screen.dart';
 import '../config/supabase_config.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -131,6 +132,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     SnackBar(
                                       content: Text('Login Exitoso'),
                                       backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => HomeScreen(),
                                     ),
                                   );
                                 } else {
