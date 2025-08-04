@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'home_screen.dart';
-import '../config/supabase_config.dart';
+import '../config/api_config.dart';
+
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -12,22 +15,36 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
 
-  Future<bool> verificarUsuario(String email, String password) async {
-    try {
-      print('Buscando usuario con email: $email y password: $password');
+  Future<Map<String, dynamic>> realizarLogin(String email, String password) async {
+    try{
+      print('Enviado login a: $email con password $password');
 
-      final response = await SupabaseConfig.client
-          .from('usuarios')
-          .select()
-          .eq('email', email)
-          .eq('password', password);
+      final response = await http.post(
+        Uri.parse(ApiConfig.loginEndpoint),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email' : email,
+          'password' : password,
+        }),
+      );
+      
+      print('Respuesta de api: ${response.statusCode}');
 
-      print('Respuesta de la base de datos: $response');
+      final data = json.decode(response.body);
+      print('Datos recibidos: $data');
 
-      return response.length > 0;
+      return {
+        'success': response.statusCode == 200 && data['success'],
+        'mensaje': data['mensaje'] ?? data['error'] ?? 'Error desconocido',
+        'usuario': data['usuario'],
+      };
     } catch (e) {
-      print('error al verificar usuario: $e');
-      return false;
+      print('❌ Error de conexión: $e');
+      return {
+        'success': false,
+        'mensaje': 'Error de conexión con el servidor',
+        'usuario': null,
+      };
     }
   }
 
@@ -122,15 +139,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                   return;
                                 }
 
-                                bool usuarioValido = await verificarUsuario(
+                                Map<String, dynamic> resultado = await realizarLogin(
                                   email,
                                   password,
                                 );
 
-                                if (usuarioValido) {
+                                if (resultado['success']) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Login Exitoso'),
+                                      content: Text(resultado['mensaje']),
                                       backgroundColor: Colors.green,
                                     ),
                                   );
@@ -143,9 +160,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(
-                                        'Email o contraseña incorrectos',
-                                      ),
+                                      content: Text(resultado['mensaje']),
                                       backgroundColor: Colors.red,
                                     ),
                                   );
