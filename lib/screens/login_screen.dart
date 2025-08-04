@@ -77,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     SizedBox(height: 30),
                     Text(
-                      'Tienda Cinammons',
+                      'Tienda Cinammonss',
                       style: TextStyle(
                         fontSize: MediaQuery.of(context).size.width * 0.02,
                         fontWeight: FontWeight.bold,
