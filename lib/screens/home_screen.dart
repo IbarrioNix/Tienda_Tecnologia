@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import 'inventario_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final List<Map<String, dynamic>> opcionesMenu = [
@@ -21,13 +22,13 @@ class HomeScreen extends StatelessWidget {
     },
   ];
 
-  Widget _crearCard(Map<String, dynamic> opcion, bool isDesktop) {
+  Widget _crearCard(Map<String, dynamic> opcion, bool isDesktop, BuildContext context) {
     // Valores dinámicos para el card
     double cardElevation = isDesktop ? 6 : 8;
     double borderRadius = isDesktop ? 16 : 20;
     double iconContainerSize = isDesktop ? 90 : 80;
     double iconSize = isDesktop ? 48 : 40;
-    double fontSize = isDesktop ? 20 : 16;
+    double fontSize = isDesktop ? 20 : 12;
     double cardPadding = isDesktop ? 20 : 16;
 
     return Card(
@@ -46,7 +47,13 @@ class HomeScreen extends StatelessWidget {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(borderRadius),
-          onTap: () {
+            onTap: () {
+              if(opcion['titulo'] == 'Inventario'){
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => InventarioScreen()),
+              );
+            }
             print('${opcion['titulo']} presionado');
           },
           child: Container(
@@ -120,7 +127,7 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    'Tienda Tech',
+                    'Tienda Tecnologia',
                     style: TextStyle(
                       fontSize: appBarTextSize,
                       fontWeight: FontWeight.bold,
@@ -128,7 +135,6 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
 
-                  // Botón logout a la derecha y centrado verticalmente
                   IconButton(
                     icon: Icon(
                       Icons.logout,
@@ -163,7 +169,7 @@ class HomeScreen extends StatelessWidget {
             crossAxisSpacing: gridSpace,
             mainAxisSpacing: gridSpace,
             children: opcionesMenu
-                .map((opcion) => _crearCard(opcion, isDesktop))
+                .map((opcion) => _crearCard(opcion, isDesktop, context))
                 .toList(),
           ),
         ),
