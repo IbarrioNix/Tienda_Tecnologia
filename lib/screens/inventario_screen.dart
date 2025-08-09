@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/producto.dart';
+import '../widgets/producto_dialog.dart';
 import '../config/api_config.dart';
 import '../screens/home_screen.dart';
 import 'package:http/http.dart' as http;
@@ -37,6 +38,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
 
   @override
   Widget build(BuildContext context) {
+    bool isDesktop = MediaQuery.of(context).size.width > 600;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -51,14 +53,13 @@ class _InventarioScreenState extends State<InventarioScreen> {
         title: Text('Inventario'),
         backgroundColor: Colors.blue,
         actions: [
-          IconButton(
-            onPressed: () {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text('Funcion de editar')));
-            },
-            icon: Icon(Icons.edit),
-          ),
+          if (isDesktop)
+            IconButton(
+              onPressed: () {
+                _mostrarDialogCrear();
+              },
+              icon: Icon(Icons.add),
+            ),
         ],
       ),
       body: Column(
@@ -69,15 +70,15 @@ class _InventarioScreenState extends State<InventarioScreen> {
             child: Row(
               children: [
                 Expanded(
-                  flex: 3,
+                  flex: 2,
                   child: TextField(
                     decoration: InputDecoration(
-                      hintText: 'Buscar Productos',
+                      hintText: 'Buscar...',
                       prefixIcon: Icon(Icons.search),
                       border: OutlineInputBorder(),
                       contentPadding: EdgeInsets.symmetric(vertical: 8),
                     ),
-                    onChanged: (value){
+                    onChanged: (value) {
                       setState(() {
                         searchQuery = value;
                         _filterProductos();
@@ -93,14 +94,19 @@ class _InventarioScreenState extends State<InventarioScreen> {
                     value: selectedCategory,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                     hint: Text('Categorías'),
                     items: _getCategorias(allProductos)
-                        .map((categoria) => DropdownMenuItem(
-                      value: categoria,
-                      child: Text(categoria),
-                    ))
+                        .map(
+                          (categoria) => DropdownMenuItem(
+                            value: categoria,
+                            child: Text(categoria),
+                          ),
+                        )
                         .toList(),
                     onChanged: (value) {
                       setState(() {
@@ -113,13 +119,13 @@ class _InventarioScreenState extends State<InventarioScreen> {
                 SizedBox(width: 12),
 
                 IconButton(
-                    onPressed: () {
-                      setState(() {
-                        isGridView = !isGridView;
-                      });
-                    },
-                    icon: Icon(
-                        isGridView ? Icons.view_list : Icons.view_module)),
+                  onPressed: () {
+                    setState(() {
+                      isGridView = !isGridView;
+                    });
+                  },
+                  icon: Icon(isGridView ? Icons.view_list : Icons.view_module),
+                ),
               ],
             ),
           ),
@@ -136,15 +142,20 @@ class _InventarioScreenState extends State<InventarioScreen> {
                 if (snapshot.hasData) {
                   allProductos = snapshot.data!;
 
-                  if (!_getCategorias(allProductos).contains(selectedCategory)) {
+                  if (!_getCategorias(
+                    allProductos,
+                  ).contains(selectedCategory)) {
                     selectedCategory = 'Todos';
                   }
 
-                  if (filteredProductos.isEmpty && searchQuery.isEmpty && selectedCategory == 'Todos') {
+                  if (filteredProductos.isEmpty &&
+                      searchQuery.isEmpty &&
+                      selectedCategory == 'Todos') {
                     filteredProductos = allProductos;
                   }
 
-                  Map<String, List<Producto>> groupedProductos = _groupProductosByCategory(filteredProductos);
+                  Map<String, List<Producto>> groupedProductos =
+                      _groupProductosByCategory(filteredProductos);
 
                   return SingleChildScrollView(
                     child: Column(
@@ -194,9 +205,9 @@ class _InventarioScreenState extends State<InventarioScreen> {
                       width: double.infinity,
                       color: Colors.grey[300],
                       child: Icon(
-                          Icons.image,
-                          size: screenWidth > 600 ? 40 : 30, // Ícono adaptativo
-                          color: Colors.grey[600]
+                        Icons.image,
+                        size: screenWidth > 600 ? 40 : 30, // Ícono adaptativo
+                        color: Colors.grey[600],
                       ),
                     ),
                   ),
@@ -211,7 +222,9 @@ class _InventarioScreenState extends State<InventarioScreen> {
                             producto.nombre,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: screenWidth > 600 ? 14 : 12, // Texto adaptativo
+                              fontSize: screenWidth > 600
+                                  ? 14
+                                  : 12, // Texto adaptativo
                             ),
                             textAlign: TextAlign.center,
                             maxLines: 1,
@@ -239,9 +252,12 @@ class _InventarioScreenState extends State<InventarioScreen> {
   }
 
   Widget _buildCategoryList(List<Producto> productos) {
+    bool isDesktop = MediaQuery.of(context).size.width > 600;
     return ListView.builder(
-      shrinkWrap: true, // No expandirse infinito
-      physics: NeverScrollableScrollPhysics(), // No scroll independiente
+      shrinkWrap: true,
+      // No expandirse infinito
+      physics: NeverScrollableScrollPhysics(),
+      // No scroll independiente
       padding: EdgeInsets.symmetric(horizontal: 16.0),
       itemCount: productos.length,
       itemBuilder: (context, index) {
@@ -250,11 +266,15 @@ class _InventarioScreenState extends State<InventarioScreen> {
           margin: EdgeInsets.only(bottom: 8.0),
           child: ListTile(
             leading: Container(
-              width: 50, height: 50,
+              width: 50,
+              height: 50,
               color: Colors.grey[300],
               child: Icon(Icons.image, color: Colors.grey[600]),
             ),
-            title: Text(producto.nombre, style: TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              producto.nombre,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -265,16 +285,18 @@ class _InventarioScreenState extends State<InventarioScreen> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('\$${producto.precioVenta}',
-                    style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                IconButton(
-                  icon: Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Editar: ${producto.nombre}')),
-                    );
-                  },
+                Text(
+                  '\$${producto.precioVenta}',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
+                if (isDesktop)
+                  IconButton(
+                    icon: Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () => _mostrarDialogEditar(producto),
+                  ),
               ],
             ),
           ),
@@ -285,14 +307,14 @@ class _InventarioScreenState extends State<InventarioScreen> {
 
   void _filterProductos() {
     filteredProductos = allProductos.where((producto) {
-
-      bool matchesSearch = searchQuery.isEmpty ||
+      bool matchesSearch =
+          searchQuery.isEmpty ||
           producto.nombre.toLowerCase().contains(searchQuery.toLowerCase()) ||
           producto.marca.toLowerCase().contains(searchQuery.toLowerCase()) ||
           producto.modelo.toLowerCase().contains(searchQuery.toLowerCase());
 
-      bool matchesCategory = selectedCategory == 'Todos' ||
-          producto.categoria == selectedCategory;
+      bool matchesCategory =
+          selectedCategory == 'Todos' || producto.categoria == selectedCategory;
 
       return matchesSearch && matchesCategory;
     }).toList();
@@ -308,7 +330,9 @@ class _InventarioScreenState extends State<InventarioScreen> {
     return categorias;
   }
 
-  Map<String, List<Producto>> _groupProductosByCategory(List<Producto> productos) {
+  Map<String, List<Producto>> _groupProductosByCategory(
+    List<Producto> productos,
+  ) {
     Map<String, List<Producto>> grouped = {};
 
     for (var producto in productos) {
@@ -325,7 +349,6 @@ class _InventarioScreenState extends State<InventarioScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Text(
@@ -344,6 +367,27 @@ class _InventarioScreenState extends State<InventarioScreen> {
 
         SizedBox(height: 16), // Separación entre categorías
       ],
+    );
+  }
+
+  void _mostrarDialogCrear() {
+    List<String> categorias = _getCategorias(allProductos);
+
+    showDialog(
+      context: context,
+      builder: (context) => ProductoDialog(categorias: categorias),
+    );
+  }
+
+  void _mostrarDialogEditar(Producto producto) {
+    List<String> categorias = _getCategorias(allProductos);
+
+    showDialog(
+      context: context,
+      builder: (context) => ProductoDialog(
+        producto: producto,
+        categorias: categorias,
+      ),
     );
   }
 }
