@@ -23,6 +23,8 @@ Future<List<Producto>> obtenerProductos() async {
 }
 
 class InventarioScreen extends StatefulWidget {
+  const InventarioScreen({super.key});
+
   @override
   _InventarioScreenState createState() => _InventarioScreenState();
 }
@@ -183,7 +185,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
     double screenWidth = MediaQuery.of(context).size.width;
     double cardWidth = screenWidth > 600 ? 180 : 140; // Desktop vs Mobile
 
-    return Container(
+    return SizedBox(
       height: screenWidth > 600 ? 220 : 180, // Altura adaptativa
       child: ListView.builder(
         scrollDirection: Axis.horizontal,

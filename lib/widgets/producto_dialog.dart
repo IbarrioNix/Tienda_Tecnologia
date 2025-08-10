@@ -6,8 +6,7 @@ class ProductoDialog extends StatefulWidget {
   final Producto? producto; // null = crear, con datos = editar
   final List<String> categorias;
 
-  const ProductoDialog({Key? key, this.producto, required this.categorias})
-    : super(key: key);
+  const ProductoDialog({super.key, this.producto, required this.categorias});
 
   @override
   _ProductoDialogState createState() => _ProductoDialogState();
@@ -42,14 +41,15 @@ class _ProductoDialogState extends State<ProductoDialog> {
       _modeloController.text = p.modelo ?? '';
       _precioVentaController.text = p.precioVenta.toString();
       _precioCompraController.text = p.precioCompra.toString();
-      _stockController.text = p.stock?.toString() ?? '';
-      _stockMinimoController.text = p.stockMinimo?.toString() ?? '';
+      _stockController.text = p.stock.toString() ?? '';
+      _stockMinimoController.text = p.stockMinimo.toString() ?? '';
       _descripcionController.text = p.descripcion ?? '';
       _categoriaSeleccionada = p.categoria;
       _activo = p.activo ?? true;
     }
   }
 
+  @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Container(
