@@ -53,8 +53,46 @@ class _ProductoDialogState extends State<ProductoDialog> {
 
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(
-        widget.producto != null ? 'Editar Producto' : 'Crear Producto',
+      title: Container(
+        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: widget.producto != null
+                ? [Colors.blue.shade600, Colors.blue.shade800]  // Editar = Azul
+                : [Colors.green.shade600, Colors.green.shade800], // Crear = Verde
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: (widget.producto != null ? Colors.blue : Colors.green)
+                  .withOpacity(0.3),
+              blurRadius: 8,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              widget.producto != null ? Icons.edit : Icons.add_circle,
+              color: Colors.white,
+              size: 28,
+            ),
+            SizedBox(width: 12),
+
+            Text(
+              widget.producto != null ? 'Editar Producto' : 'Crear Producto',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            )
+          ],
+        ),
       ),
       content: Form(
         key: _formKey,
