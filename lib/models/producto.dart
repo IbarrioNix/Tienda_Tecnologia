@@ -44,4 +44,5 @@ class Producto {
       createdAt: DateTime.parse(json['created_at']),
     );
   }
+
 }

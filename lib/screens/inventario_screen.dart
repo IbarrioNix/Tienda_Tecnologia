@@ -320,6 +320,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
     }).toList();
   }
 
+
   List<String> _getCategorias(List<Producto> productos) {
     List<String> categorias = ['Todos'];  // ← ESTE "Todos" causa el problema
     Set<String> categoriasUnicas = productos.map((p) => p.categoria).toSet();
