@@ -90,6 +90,7 @@ class _ProductoDialogState extends State<ProductoDialog> {
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.5,
               ),
+
             )
           ],
         ),
