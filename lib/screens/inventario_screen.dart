@@ -309,9 +309,9 @@ class _InventarioScreenState extends State<InventarioScreen> {
     filteredProductos = allProductos.where((producto) {
       bool matchesSearch =
           searchQuery.isEmpty ||
-          producto.nombre.toLowerCase().contains(searchQuery.toLowerCase()) ||
-          producto.marca.toLowerCase().contains(searchQuery.toLowerCase()) ||
-          producto.modelo.toLowerCase().contains(searchQuery.toLowerCase());
+              producto.nombre.toLowerCase().contains(searchQuery.toLowerCase()) ||
+              producto.marca.toLowerCase().contains(searchQuery.toLowerCase()) ||
+              (producto.modelo?.toLowerCase() ?? '').contains(searchQuery.toLowerCase()); // ✅ CORRECCIÓN
 
       bool matchesCategory =
           selectedCategory == 'Todos' || producto.categoria == selectedCategory;
@@ -321,12 +321,9 @@ class _InventarioScreenState extends State<InventarioScreen> {
   }
 
   List<String> _getCategorias(List<Producto> productos) {
-    List<String> categorias = ['Todos'];
-
+    List<String> categorias = ['Todos'];  // ← ESTE "Todos" causa el problema
     Set<String> categoriasUnicas = productos.map((p) => p.categoria).toSet();
-
     categorias.addAll(categoriasUnicas.toList()..sort());
-
     return categorias;
   }
 
@@ -370,24 +367,119 @@ class _InventarioScreenState extends State<InventarioScreen> {
     );
   }
 
-  void _mostrarDialogCrear() {
-    List<String> categorias = _getCategorias(allProductos);
-
-    showDialog(
-      context: context,
-      builder: (context) => ProductoDialog(categorias: categorias),
-    );
-  }
-
-  void _mostrarDialogEditar(Producto producto) {
-    List<String> categorias = _getCategorias(allProductos);
-
-    showDialog(
+  void _mostrarDialogCrear() async {
+    final Producto? nuevoProducto = await showDialog<Producto>(
       context: context,
       builder: (context) => ProductoDialog(
-        producto: producto,
-        categorias: categorias,
+        categorias: _getCategorias(allProductos),
       ),
     );
+
+    if (nuevoProducto != null) {
+      await _crearProductoEnAPI(nuevoProducto);
+      setState(() {
+
+      });
+    }
+  }
+
+  void _mostrarDialogEditar(Producto producto) async {
+    final Producto? productoEditado = await showDialog<Producto>(
+      context: context,
+      builder: (context) => ProductoDialog(
+        producto: producto, // Pre-cargar datos existentes
+        categorias: _getCategorias(allProductos),
+      ),
+    );
+
+    if (productoEditado != null) {
+      await _actualizarProductoEnAPI(productoEditado);
+      setState(() {
+
+      });
+    }
+  }
+
+  Future<void> _crearProductoEnAPI (Producto producto) async{
+    try{
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/productos'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'nombre': producto.nombre,
+          'marca': producto.marca,
+          'modelo': producto.modelo,
+          'categoria': producto.categoria,
+          'precio_venta': producto.precioVenta,
+          'precio_compra': producto.precioCompra,
+          'stock': producto.stock,
+          'stock_minimo': producto.stockMinimo,
+          'descripcion': producto.descripcion,
+          'activo': producto.activo,
+        }),
+      );
+
+      if(response.statusCode == 201){
+        print('Producto creado exitosamente');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Producto creado exitosamente'),
+          backgroundColor: Colors.green),
+        );
+      }else{
+        throw Exception('Error ${response.statusCode}');
+      }
+    }catch(e){
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content:
+        Text('Error: no se pudo crear'),
+        backgroundColor: Colors.red,)
+      );
+    }
+  }
+
+  Future<void> _actualizarProductoEnAPI(Producto producto) async {
+    try {
+      final response = await http.put(
+        Uri.parse('${ApiConfig.baseUrl}/productos/${producto.id}'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'nombre': producto.nombre,
+          'marca': producto.marca,
+          'modelo': producto.modelo,
+          'categoria': producto.categoria,
+          'precio_venta': producto.precioVenta,
+          'precio_compra': producto.precioCompra,
+          'stock': producto.stock,
+          'stock_minimo': producto.stockMinimo,
+          'descripcion': producto.descripcion,
+          'activo': producto.activo,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('✅ Producto actualizado exitosamente');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Producto actualizado exitosamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        throw Exception('Error ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: No se pudo actualizar el producto'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

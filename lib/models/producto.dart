@@ -1,47 +1,46 @@
 class Producto {
-
-  final int id;
+  final int? id;                    // ✅ Nullable - null al crear
   final String nombre;
   final String marca;
   final String categoria;
-  final String modelo;
+  final String? modelo;             // ✅ Nullable - opcional
   final double precioVenta;
   final double precioCompra;
   final int stock;
   final int stockMinimo;
-  final String descripcion;
+  final String? descripcion;        // ✅ Nullable - opcional
   final bool activo;
   final DateTime createdAt;
 
   Producto({
-    required this.id,
+    this.id,                        // ✅ Sin required
     required this.nombre,
     required this.marca,
     required this.categoria,
-    required this.modelo,
+    this.modelo,                    // ✅ Sin required
     required this.precioVenta,
     required this.precioCompra,
     required this.stock,
     required this.stockMinimo,
-    required this.descripcion,
+    this.descripcion,               // ✅ Sin required
     required this.activo,
     required this.createdAt,
   });
 
-// Convertir JSON a objeto Producto
+  // ✅ fromJson() MEJORADO - Maneja nulls
   factory Producto.fromJson(Map<String, dynamic> json) {
     return Producto(
       id: json['id'],
-      nombre: json['nombre'],
-      marca: json['marca'],
-      categoria: json['categoria'],
-      modelo: json['modelo'],
-      precioVenta: double.parse(json['precio_venta']),
-      precioCompra: double.parse(json['precio_compra']),
-      stock: json['stock'],
-      stockMinimo: json['stock_minimo'],
-      descripcion: json['descripcion'],
-      activo: json['activo'],
+      nombre: json['nombre'] ?? '',
+      marca: json['marca'] ?? '',
+      categoria: json['categoria'] ?? '',
+      modelo: json['modelo'],                         // ✅ Puede ser null
+      precioVenta: double.parse(json['precio_venta'].toString()),
+      precioCompra: double.parse(json['precio_compra'].toString()),
+      stock: json['stock'] ?? 0,
+      stockMinimo: json['stock_minimo'] ?? 0,
+      descripcion: json['descripcion'],              // ✅ Puede ser null
+      activo: json['activo'] ?? true,
       createdAt: DateTime.parse(json['created_at']),
     );
   }
