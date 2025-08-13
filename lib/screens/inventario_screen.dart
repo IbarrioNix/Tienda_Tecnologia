@@ -13,7 +13,21 @@ Future<List<Producto>> obtenerProductos() async {
     if (response.statusCode == 200) {
       Map<String, dynamic> jsonResponse = jsonDecode(response.body);
       List<dynamic> jsonData = jsonResponse['productos'];
-      return jsonData.map((json) => Producto.fromJson(json)).toList();
+
+      // 🔍 DEBUG: Imprimir todos los productos que llegan del backend
+      print('🔍 TOTAL PRODUCTOS RECIBIDOS: ${jsonData.length}');
+      for (var producto in jsonData) {
+        print('🔍 Producto: ${producto['nombre']} - Activo: ${producto['activo']}');
+      }
+
+      List<Producto> productos = jsonData.map((json) => Producto.fromJson(json)).toList();
+
+      // 🔍 DEBUG: Verificar productos después de mapear
+      int activos = productos.where((p) => p.activo == true).length;
+      int inactivos = productos.where((p) => p.activo == false).length;
+      print('🔍 PRODUCTOS MAPEADOS: $activos activos, $inactivos inactivos');
+
+      return productos;
     } else {
       throw Exception('Error al cargar productos: ${response.statusCode}');
     }
@@ -180,70 +194,133 @@ class _InventarioScreenState extends State<InventarioScreen> {
     );
   }
 
+
   Widget _buildCategoryGrid(List<Producto> productos) {
-    // Calcular ancho de tarjeta según pantalla
     double screenWidth = MediaQuery.of(context).size.width;
-    double cardWidth = screenWidth > 600 ? 180 : 140; // Desktop vs Mobile
+    double cardWidth = screenWidth > 600 ? 180 : 140;
 
     return SizedBox(
-      height: screenWidth > 600 ? 220 : 180, // Altura adaptativa
+      height: screenWidth > 600 ? 220 : 180,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: 16.0),
         itemCount: productos.length,
         itemBuilder: (context, index) {
           Producto producto = productos[index];
+          bool isActive = producto.activo;
+
           return Container(
-            width: cardWidth, // Ancho adaptativo
+            width: cardWidth,
             margin: EdgeInsets.only(right: 12),
             child: Card(
-              elevation: 4,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+              elevation: isActive ? 4 : 1,
+              child: Stack(
                 children: [
-                  Expanded(
-                    flex: 3,
-                    child: Container(
-                      width: double.infinity,
-                      color: Colors.grey[300],
-                      child: Icon(
-                        Icons.image,
-                        size: screenWidth > 600 ? 40 : 30, // Ícono adaptativo
-                        color: Colors.grey[600],
+
+                  if (!isActive)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
                     ),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Container(
+                          width: double.infinity,
+                          color: isActive ? Colors.grey[300] : Colors.grey[400],
+                          child: Icon(
+                            Icons.image,
+                            size: screenWidth > 600 ? 20 : 10,
+                            color: isActive ? Colors.grey[600] : Colors.grey[500],
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                producto.nombre,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: screenWidth > 600 ? 14 : 12,
+                                  color: isActive ? Colors.black : Colors.grey[600],
+                                  decoration: isActive ? TextDecoration.none : TextDecoration.lineThrough,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '\$${producto.precioVenta}',
+                                style: TextStyle(
+                                  color: isActive ? Colors.green : Colors.grey[500],
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: screenWidth > 600 ? 13 : 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    flex: 2,
-                    child: Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            producto.nombre,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: screenWidth > 600
-                                  ? 14
-                                  : 12, // Texto adaptativo
+
+                  if (!isActive)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade600,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.3),
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          ],
+                        ),
+                        child: Text(
+                          'INACTIVO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
                           ),
-                          Text(
-                            '\$${producto.precioVenta}',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                              fontSize: screenWidth > 600 ? 13 : 11,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+
+                  if (isActive)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade600,
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        child: Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -257,31 +334,100 @@ class _InventarioScreenState extends State<InventarioScreen> {
     bool isDesktop = MediaQuery.of(context).size.width > 600;
     return ListView.builder(
       shrinkWrap: true,
-      // No expandirse infinito
       physics: NeverScrollableScrollPhysics(),
-      // No scroll independiente
       padding: EdgeInsets.symmetric(horizontal: 16.0),
       itemCount: productos.length,
       itemBuilder: (context, index) {
         Producto producto = productos[index];
+        bool isActive = producto.activo;
+
         return Card(
           margin: EdgeInsets.only(bottom: 8.0),
+          elevation: isActive ? 2 : 0.5,
+          color: isActive ? Colors.white : Colors.grey[100],
           child: ListTile(
             leading: Container(
               width: 50,
               height: 50,
-              color: Colors.grey[300],
-              child: Icon(Icons.image, color: Colors.grey[600]),
+              decoration: BoxDecoration(
+                color: isActive ? Colors.grey[300] : Colors.grey[400],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Stack(
+                children: [
+                  Center(
+                    child: Icon(
+                      Icons.image,
+                      color: isActive ? Colors.grey[600] : Colors.grey[500],
+                    ),
+                  ),
+                  // 🚫 ICONO DE INACTIVO
+                  if (!isActive)
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: Container(
+                        padding: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.block,
+                          color: Colors.white,
+                          size: 10,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             title: Text(
               producto.nombre,
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isActive ? Colors.black : Colors.grey[600],
+                decoration: isActive ? TextDecoration.none : TextDecoration.lineThrough,
+              ),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${producto.marca} • ${producto.modelo}'),
-                Text('${producto.categoria} • Stock: ${producto.stock}'),
+                Text(
+                  '${producto.marca} • ${producto.modelo ?? 'N/A'}',
+                  style: TextStyle(
+                    color: isActive ? Colors.grey[700] : Colors.grey[500],
+                  ),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      '${producto.categoria} • Stock: ${producto.stock}',
+                      style: TextStyle(
+                        color: isActive ? Colors.grey[700] : Colors.grey[500],
+                      ),
+                    ),
+                    if (!isActive) ...[
+                      SizedBox(width: 8),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.shade300),
+                        ),
+                        child: Text(
+                          'INACTIVO',
+                          style: TextStyle(
+                            color: Colors.red.shade700,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ],
             ),
             trailing: Row(
@@ -290,15 +436,20 @@ class _InventarioScreenState extends State<InventarioScreen> {
                 Text(
                   '\$${producto.precioVenta}',
                   style: TextStyle(
-                    color: Colors.green,
+                    color: isActive ? Colors.green : Colors.grey[500],
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (isDesktop)
+                if (isDesktop) ...[
+                  SizedBox(width: 8),
                   IconButton(
-                    icon: Icon(Icons.edit, color: Colors.blue),
+                    icon: Icon(
+                      Icons.edit,
+                      color: isActive ? Colors.blue : Colors.grey[500],
+                    ),
                     onPressed: () => _mostrarDialogEditar(producto),
                   ),
+                ],
               ],
             ),
           ),
@@ -313,7 +464,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
           searchQuery.isEmpty ||
               producto.nombre.toLowerCase().contains(searchQuery.toLowerCase()) ||
               producto.marca.toLowerCase().contains(searchQuery.toLowerCase()) ||
-              (producto.modelo?.toLowerCase() ?? '').contains(searchQuery.toLowerCase()); // ✅ CORRECCIÓN
+              (producto.modelo?.toLowerCase() ?? '').contains(searchQuery.toLowerCase());
 
       bool matchesCategory =
           selectedCategory == 'Todos' || producto.categoria == selectedCategory;
@@ -324,7 +475,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
 
 
   List<String> _getCategorias(List<Producto> productos) {
-    List<String> categorias = ['Todos'];  // ← ESTE "Todos" causa el problema
+    List<String> categorias = ['Todos'];
     Set<String> categoriasUnicas = productos.map((p) => p.categoria).toSet();
     categorias.addAll(categoriasUnicas.toList()..sort());
     return categorias;

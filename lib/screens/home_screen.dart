@@ -22,8 +22,6 @@ class HomeScreen extends StatelessWidget {
     },
   ];
 
-  const HomeScreen({super.key});
-
   Widget _crearCard(Map<String, dynamic> opcion, bool isDesktop, BuildContext context) {
     // Valores dinámicos para el card
     double cardElevation = isDesktop ? 6 : 8;

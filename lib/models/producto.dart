@@ -40,7 +40,7 @@ class Producto {
       stock: json['stock'] ?? 0,
       stockMinimo: json['stock_minimo'] ?? 0,
       descripcion: json['descripcion'],              // ✅ Puede ser null
-      activo: json['activo'] ?? true,
+      activo: json['activo'],
       createdAt: DateTime.parse(json['created_at']),
     );
   }
