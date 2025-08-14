@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'inventario_screen.dart';
+import 'ventas_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final List<Map<String, dynamic>> opcionesMenu = [
@@ -48,11 +49,17 @@ class HomeScreen extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(borderRadius),
             onTap: () {
-              if(opcion['titulo'] == 'Inventario'){
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => InventarioScreen()),
-              );
+              if(opcion['titulo'] == 'Inventario') {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => InventarioScreen()),
+                );
+              }
+              else if(opcion['titulo'] == 'Ventas'){
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => VentasScreen()),
+                );
             }
             print('${opcion['titulo']} presionado');
           },
