@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:tienda_tecnologia/config/api_config.dart';
 import '../models/producto.dart';
+import 'package:http/http.dart' as http;
 
 // 🧩 Modelo ItemCarrito
 class ItemCarrito {
@@ -336,11 +339,7 @@ class _CarritoPanelState extends State<CarritoPanel> with TickerProviderStateMix
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Procesando venta...')),
-                );
-              },
+              onPressed: _procesarVenta,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green[600],
                 foregroundColor: Colors.white,
@@ -408,5 +407,54 @@ class _CarritoPanelState extends State<CarritoPanel> with TickerProviderStateMix
 
   double _getTotalCarrito() {
     return widget.carrito.fold(0, (sum, item) => sum + item.subtotal);
+  }
+
+  Future<void> _procesarVenta() async{
+    if (widget.carrito.isEmpty) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Procesando Venta...')),
+    );
+
+    final productosList = widget.carrito.map((item){
+      return {
+        'producto_id' : item.producto.id,
+        'cantidad' : item.cantidad,
+      };
+    }).toList();
+
+    final ventaData = {
+      'usuario_id' : 1,
+      'metodo_pago' : 'Efectivo',
+      'productos' : productosList,
+    };
+
+    try{
+      final response = await http.post(
+        Uri.parse(ApiConfig.ventasEndpoint),
+        headers: {
+          'Content-Type' : 'application/json',
+        },
+        body: jsonEncode(ventaData),
+      );
+
+      if(response.statusCode == 200 ||response.statusCode == 201){
+        print('Venta realizada correctamente');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Venta realizada correctamente'),
+              backgroundColor: Colors.green),
+        );
+      }else{
+        print('⚠ Error ${response.statusCode}: ${response.body}');
+        throw Exception('Error ${response.statusCode}');
+      }
+    }catch(e){
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content:
+          Text('Error: no se pudo crear'),
+            backgroundColor: Colors.red,)
+      );
+    }
   }
 }

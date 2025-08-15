@@ -4,4 +4,5 @@ class ApiConfig {
   static const String loginEndpoint = '$baseUrl/login';
   static const String usuariosEndpoint = '$baseUrl/usuarios';
   static const String productosEndpoint = '$baseUrl/productos';
+  static const String ventasEndpoint = '$baseUrl/ventas';
 }
