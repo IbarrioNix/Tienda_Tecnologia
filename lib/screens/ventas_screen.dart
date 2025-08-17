@@ -78,6 +78,7 @@ class _VentasScreenState extends State<VentasScreen> {
             isPanelOpen: isPanelOpen,
             onTogglePanel: _togglePanel,
             onModificarCantidad: _modificarCantidadCarrito,
+            onVaciarCarrito: _vaciarCarrito,
           ),
         ],
       ),
@@ -227,9 +228,39 @@ class _VentasScreenState extends State<VentasScreen> {
     );
   }
 
+  Widget _buildProductosContent() {
+    if (!_getCategorias(allProductos).contains(selectedCategory)) {
+      selectedCategory = 'Todos';
+    }
+
+    if (filteredProductos.isEmpty &&
+        searchQuery.isEmpty &&
+        selectedCategory == 'Todos') {
+      filteredProductos = allProductos;
+    }
+
+    final groupedProductos = _groupProductosByCategory(filteredProductos);
+
+    if (filteredProductos.isEmpty) {
+      return _buildEmptyResults();
+    }
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: groupedProductos.entries.map((entry) {
+          final String categoria = entry.key;
+          final List<Producto> productos = entry.value;
+          return _buildCategorySection(categoria, productos);
+        }).toList(),
+      ),
+    );
+  }
+
   Widget _buildProductosArea() {
     return Expanded(
-      child: FutureBuilder<List<Producto>>(
+      child: allProductos.isEmpty
+          ? FutureBuilder<List<Producto>>(
         future: obtenerProductosActivos(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -241,41 +272,16 @@ class _VentasScreenState extends State<VentasScreen> {
           }
 
           if (snapshot.hasData) {
-            allProductos = snapshot.data!;
-
-            if (!_getCategorias(allProductos).contains(selectedCategory)) {
-              selectedCategory = 'Todos';
-            }
-
-            if (filteredProductos.isEmpty &&
-                searchQuery.isEmpty &&
-                selectedCategory == 'Todos') {
-              filteredProductos = allProductos;
-            }
-
-            final groupedProductos = _groupProductosByCategory(filteredProductos);
-
-            if (filteredProductos.isEmpty) {
-              return _buildEmptyResults();
-            }
-
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: groupedProductos.entries.map((entry) {
-                  final String categoria = entry.key;
-                  final List<Producto> productos = entry.value;
-                  return _buildCategorySection(categoria, productos);
-                }).toList(),
-              ),
-            );
+            allProductos = snapshot.data!; // ← Guardamos en allProductos
+            return _buildProductosContent();
           }
 
           return const Center(
             child: Text('No hay productos disponibles'),
           );
         },
-      ),
+      )
+          : _buildProductosContent(), // ← Usar productos cacheados
     );
   }
 
@@ -510,8 +516,6 @@ class _VentasScreenState extends State<VentasScreen> {
     );
   }
 
-  // ❌ ELIMINADOS: _buildCarritoSlide, _buildCarritoTab, _buildResizeBar, _buildCarritoPanel, _buildCarritoItem
-
   void _filterProductos() {
     filteredProductos = allProductos.where((producto) {
       final q = searchQuery.toLowerCase();
@@ -547,6 +551,7 @@ class _VentasScreenState extends State<VentasScreen> {
   }
 
   void _agregarAlCarrito(Producto producto) {
+
     setState(() {
       final existingIndex =
       carrito.indexWhere((item) => item.producto.id == producto.id);
@@ -586,6 +591,35 @@ class _VentasScreenState extends State<VentasScreen> {
       }
       item.actualizarSubtotal();
     });
+  }
+
+  void _vaciarCarrito() {
+    setState(() {
+      carrito.clear(); // Limpia toda la lista
+    });
+
+    _recargarProductos();
+
+    // Mostrar mensaje de confirmación
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Carrito vaciado'),
+        backgroundColor: Colors.orange,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _recargarProductos() async {
+    try{
+      final nuevosProductos = await obtenerProductosActivos();
+      setState(() {
+        allProductos = nuevosProductos;
+        filteredProductos = nuevosProductos;
+      });
+    }catch(e){
+      print('Error al obtener productos');
+    }
   }
 
   // 🔄 SIMPLIFICADO: _togglePanel (sin animaciones)

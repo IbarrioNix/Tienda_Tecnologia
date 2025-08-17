@@ -11,7 +11,7 @@ class ItemCarrito {
   double subtotal;
 
   ItemCarrito({required this.producto, this.cantidad = 1})
-      : subtotal = producto.precioVenta * cantidad;
+    : subtotal = producto.precioVenta * cantidad;
 
   void actualizarSubtotal() {
     subtotal = producto.precioVenta * cantidad;
@@ -24,6 +24,7 @@ class CarritoPanel extends StatefulWidget {
   final VoidCallback onTogglePanel;
   final bool isPanelOpen;
   final Function(ItemCarrito, int) onModificarCantidad;
+  final VoidCallback onVaciarCarrito;
 
   const CarritoPanel({
     super.key,
@@ -31,13 +32,15 @@ class CarritoPanel extends StatefulWidget {
     required this.onTogglePanel,
     required this.isPanelOpen,
     required this.onModificarCantidad,
+    required this.onVaciarCarrito,
   });
 
   @override
   State<CarritoPanel> createState() => _CarritoPanelState();
 }
 
-class _CarritoPanelState extends State<CarritoPanel> with TickerProviderStateMixin {
+class _CarritoPanelState extends State<CarritoPanel>
+    with TickerProviderStateMixin {
   late AnimationController _panelController;
   late Animation<Offset> _panelAnimation;
 
@@ -55,13 +58,13 @@ class _CarritoPanelState extends State<CarritoPanel> with TickerProviderStateMix
       vsync: this,
     );
 
-    _panelAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: const Offset(0.0, 0.0),
-    ).animate(CurvedAnimation(
-      parent: _panelController,
-      curve: Curves.easeInOut,
-    ));
+    _panelAnimation =
+        Tween<Offset>(
+          begin: const Offset(1.0, 0.0),
+          end: const Offset(0.0, 0.0),
+        ).animate(
+          CurvedAnimation(parent: _panelController, curve: Curves.easeInOut),
+        );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -146,7 +149,10 @@ class _CarritoPanelState extends State<CarritoPanel> with TickerProviderStateMix
               const SizedBox(height: 4),
               if (_getTotalItems() > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(12),
@@ -199,22 +205,23 @@ class _CarritoPanelState extends State<CarritoPanel> with TickerProviderStateMix
         width: 8,
         decoration: BoxDecoration(
           color: _isDragging ? Colors.green[400] : Colors.grey[300],
-          border: Border(
-            right: BorderSide(color: Colors.grey[400]!, width: 1),
-          ),
+          border: Border(right: BorderSide(color: Colors.grey[400]!, width: 1)),
         ),
         child: Column(
           children: [
             const SizedBox(height: 20),
-            ...List.generate(3, (index) => Container(
-              margin: const EdgeInsets.symmetric(vertical: 2),
-              width: 4,
-              height: 20,
-              decoration: BoxDecoration(
-                color: _isDragging ? Colors.white : Colors.grey[500],
-                borderRadius: BorderRadius.circular(2),
+            ...List.generate(
+              3,
+              (index) => Container(
+                margin: const EdgeInsets.symmetric(vertical: 2),
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: _isDragging ? Colors.white : Colors.grey[500],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            )),
+            ),
           ],
         ),
       ),
@@ -265,6 +272,24 @@ class _CarritoPanelState extends State<CarritoPanel> with TickerProviderStateMix
               ),
             ),
           ),
+          if (widget.carrito.isNotEmpty)...[
+            GestureDetector(
+              onTap: _mostrarConfirmacionVaciar,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.delete_sweep,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8,),
+          ],
           GestureDetector(
             onTap: widget.onTogglePanel,
             child: Container(
@@ -291,22 +316,26 @@ class _CarritoPanelState extends State<CarritoPanel> with TickerProviderStateMix
     return Expanded(
       child: widget.carrito.isEmpty
           ? Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.shopping_cart_outlined,
-              size: 64,
-              color: Colors.grey[400]),
-          const SizedBox(height: 8),
-          Text('Carrito vacío',
-              style: TextStyle(color: Colors.grey[600])),
-        ],
-      )
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.shopping_cart_outlined,
+                  size: 64,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Carrito vacío',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            )
           : ListView.builder(
-        itemCount: widget.carrito.length,
-        itemBuilder: (context, index) {
-          return _buildCarritoItem(widget.carrito[index]);
-        },
-      ),
+              itemCount: widget.carrito.length,
+              itemBuilder: (context, index) {
+                return _buildCarritoItem(widget.carrito[index]);
+              },
+            ),
     );
   }
 
@@ -339,7 +368,7 @@ class _CarritoPanelState extends State<CarritoPanel> with TickerProviderStateMix
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _procesarVenta,
+              onPressed: _mostrarConfirmacionVenta,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green[600],
                 foregroundColor: Colors.white,
@@ -386,10 +415,15 @@ class _CarritoPanelState extends State<CarritoPanel> with TickerProviderStateMix
             children: [
               IconButton(
                 onPressed: () => widget.onModificarCantidad(item, -1),
-                icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                icon: const Icon(
+                  Icons.remove_circle_outline,
+                  color: Colors.red,
+                ),
               ),
-              Text('${item.cantidad}',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                '${item.cantidad}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               IconButton(
                 onPressed: () => widget.onModificarCantidad(item, 1),
                 icon: const Icon(Icons.add_circle_outline, color: Colors.green),
@@ -409,52 +443,127 @@ class _CarritoPanelState extends State<CarritoPanel> with TickerProviderStateMix
     return widget.carrito.fold(0, (sum, item) => sum + item.subtotal);
   }
 
-  Future<void> _procesarVenta() async{
+  Future<void> _procesarVenta() async {
     if (widget.carrito.isEmpty) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Procesando Venta...')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Procesando Venta...')));
 
-    final productosList = widget.carrito.map((item){
-      return {
-        'producto_id' : item.producto.id,
-        'cantidad' : item.cantidad,
-      };
+    final productosList = widget.carrito.map((item) {
+      return {'producto_id': item.producto.id, 'cantidad': item.cantidad};
     }).toList();
 
     final ventaData = {
-      'usuario_id' : 1,
-      'metodo_pago' : 'Efectivo',
-      'productos' : productosList,
+      'usuario_id': 1,
+      'metodo_pago': 'Efectivo',
+      'productos': productosList,
     };
 
-    try{
+    try {
       final response = await http.post(
         Uri.parse(ApiConfig.ventasEndpoint),
-        headers: {
-          'Content-Type' : 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode(ventaData),
       );
 
-      if(response.statusCode == 200 ||response.statusCode == 201){
+      if (response.statusCode == 200 || response.statusCode == 201) {
         print('Venta realizada correctamente');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Venta realizada correctamente'),
-              backgroundColor: Colors.green),
+          SnackBar(
+            content: Text('Venta realizada correctamente'),
+            backgroundColor: Colors.green,
+          ),
         );
-      }else{
+
+        widget.onVaciarCarrito();
+
+        Future.delayed(Duration(seconds: 2), (){
+          if (mounted){
+            widget.onTogglePanel();
+          }
+        });
+
+      } else {
         print('⚠ Error ${response.statusCode}: ${response.body}');
         throw Exception('Error ${response.statusCode}');
       }
-    }catch(e){
+    } catch (e) {
       print('Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content:
-          Text('Error: no se pudo crear'),
-            backgroundColor: Colors.red,)
+        SnackBar(
+          content: Text('Error: no se pudo crear'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
+  }
+  void _mostrarConfirmacionVenta(){
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('Confirmar accion'),
+            ],
+          ),
+          content: Text('Confirmar Venta?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _procesarVenta();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.greenAccent,
+                foregroundColor: Colors.black,
+              ),
+              child: Text('Vender'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  void _mostrarConfirmacionVaciar() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('Confirmar accion'),
+            ],
+          ),
+          content: Text('Estas seguro de que quieres vaciar el carrito?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                widget.onVaciarCarrito();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Vaciar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
