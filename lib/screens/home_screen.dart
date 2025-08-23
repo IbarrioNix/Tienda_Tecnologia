@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'inventario_screen.dart';
 import 'ventas_screen.dart';
+import 'reabastecimiento_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final List<Map<String, dynamic>> opcionesMenu = [
@@ -61,6 +62,12 @@ class HomeScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => VentasScreen()),
                 );
             }
+              else if(opcion['titulo'] == 'Reabastecimiento'){
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => ReabastecimientoScreen()),
+                );
+              }
             print('${opcion['titulo']} presionado');
           },
           child: Container(
