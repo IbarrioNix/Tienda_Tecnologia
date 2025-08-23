@@ -1,10 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/producto.dart';
 import '../widgets/producto_dialog.dart';
 import '../config/api_config.dart';
 import '../screens/home_screen.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+import '../widgets/reabastecimiento_dialog.dart';
 
 Future<List<Producto>> obtenerProductos() async {
   try {
@@ -17,10 +18,14 @@ Future<List<Producto>> obtenerProductos() async {
       // 🔍 DEBUG: Imprimir todos los productos que llegan del backend
       print('🔍 TOTAL PRODUCTOS RECIBIDOS: ${jsonData.length}');
       for (var producto in jsonData) {
-        print('🔍 Producto: ${producto['nombre']} - Activo: ${producto['activo']}');
+        print(
+          '🔍 Producto: ${producto['nombre']} - Activo: ${producto['activo']}',
+        );
       }
 
-      List<Producto> productos = jsonData.map((json) => Producto.fromJson(json)).toList();
+      List<Producto> productos = jsonData
+          .map((json) => Producto.fromJson(json))
+          .toList();
 
       // 🔍 DEBUG: Verificar productos después de mapear
       int activos = productos.where((p) => p.activo == true).length;
@@ -194,7 +199,6 @@ class _InventarioScreenState extends State<InventarioScreen> {
     );
   }
 
-
   Widget _buildCategoryGrid(List<Producto> productos) {
     double screenWidth = MediaQuery.of(context).size.width;
     double cardWidth = screenWidth > 600 ? 180 : 140;
@@ -216,7 +220,6 @@ class _InventarioScreenState extends State<InventarioScreen> {
               elevation: isActive ? 4 : 1,
               child: Stack(
                 children: [
-
                   if (!isActive)
                     Positioned.fill(
                       child: Container(
@@ -238,7 +241,9 @@ class _InventarioScreenState extends State<InventarioScreen> {
                           child: Icon(
                             Icons.image,
                             size: screenWidth > 600 ? 20 : 10,
-                            color: isActive ? Colors.grey[600] : Colors.grey[500],
+                            color: isActive
+                                ? Colors.grey[600]
+                                : Colors.grey[500],
                           ),
                         ),
                       ),
@@ -254,8 +259,12 @@ class _InventarioScreenState extends State<InventarioScreen> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: screenWidth > 600 ? 14 : 12,
-                                  color: isActive ? Colors.black : Colors.grey[600],
-                                  decoration: isActive ? TextDecoration.none : TextDecoration.lineThrough,
+                                  color: isActive
+                                      ? Colors.black
+                                      : Colors.grey[600],
+                                  decoration: isActive
+                                      ? TextDecoration.none
+                                      : TextDecoration.lineThrough,
                                 ),
                                 textAlign: TextAlign.center,
                                 maxLines: 1,
@@ -264,7 +273,9 @@ class _InventarioScreenState extends State<InventarioScreen> {
                               Text(
                                 '\$${producto.precioVenta}',
                                 style: TextStyle(
-                                  color: isActive ? Colors.green : Colors.grey[500],
+                                  color: isActive
+                                      ? Colors.green
+                                      : Colors.grey[500],
                                   fontWeight: FontWeight.bold,
                                   fontSize: screenWidth > 600 ? 13 : 11,
                                 ),
@@ -281,7 +292,10 @@ class _InventarioScreenState extends State<InventarioScreen> {
                       top: 8,
                       right: 8,
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.red.shade600,
                           borderRadius: BorderRadius.circular(12),
@@ -314,11 +328,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
                           color: Colors.green.shade600,
                           borderRadius: BorderRadius.circular(50),
                         ),
-                        child: Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 12,
-                        ),
+                        child: Icon(Icons.check, color: Colors.white, size: 12),
                       ),
                     ),
                 ],
@@ -372,11 +382,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
                           color: Colors.red,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(
-                          Icons.block,
-                          color: Colors.white,
-                          size: 10,
-                        ),
+                        child: Icon(Icons.block, color: Colors.white, size: 10),
                       ),
                     ),
                 ],
@@ -387,7 +393,9 @@ class _InventarioScreenState extends State<InventarioScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: isActive ? Colors.black : Colors.grey[600],
-                decoration: isActive ? TextDecoration.none : TextDecoration.lineThrough,
+                decoration: isActive
+                    ? TextDecoration.none
+                    : TextDecoration.lineThrough,
               ),
             ),
             subtitle: Column(
@@ -410,7 +418,10 @@ class _InventarioScreenState extends State<InventarioScreen> {
                     if (!isActive) ...[
                       SizedBox(width: 8),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.red.shade100,
                           borderRadius: BorderRadius.circular(12),
@@ -449,6 +460,14 @@ class _InventarioScreenState extends State<InventarioScreen> {
                     ),
                     onPressed: () => _mostrarDialogEditar(producto),
                   ),
+                  SizedBox(width: 8),
+                  IconButton(
+                    icon: Icon(
+                      Icons.local_shipping_outlined,
+                      color: isActive ? Colors.deepPurple : Colors.grey[500],
+                    ),
+                    onPressed: () => _mostrarDialogReabastecer(producto),
+                  ),
                 ],
               ],
             ),
@@ -462,9 +481,11 @@ class _InventarioScreenState extends State<InventarioScreen> {
     filteredProductos = allProductos.where((producto) {
       bool matchesSearch =
           searchQuery.isEmpty ||
-              producto.nombre.toLowerCase().contains(searchQuery.toLowerCase()) ||
-              producto.marca.toLowerCase().contains(searchQuery.toLowerCase()) ||
-              (producto.modelo?.toLowerCase() ?? '').contains(searchQuery.toLowerCase());
+          producto.nombre.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          producto.marca.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          (producto.modelo?.toLowerCase() ?? '').contains(
+            searchQuery.toLowerCase(),
+          );
 
       bool matchesCategory =
           selectedCategory == 'Todos' || producto.categoria == selectedCategory;
@@ -472,7 +493,6 @@ class _InventarioScreenState extends State<InventarioScreen> {
       return matchesSearch && matchesCategory;
     }).toList();
   }
-
 
   List<String> _getCategorias(List<Producto> productos) {
     List<String> categorias = ['Todos'];
@@ -524,16 +544,13 @@ class _InventarioScreenState extends State<InventarioScreen> {
   void _mostrarDialogCrear() async {
     final Producto? nuevoProducto = await showDialog<Producto>(
       context: context,
-      builder: (context) => ProductoDialog(
-        categorias: _getCategorias(allProductos),
-      ),
+      builder: (context) =>
+          ProductoDialog(categorias: _getCategorias(allProductos)),
     );
 
     if (nuevoProducto != null) {
       await _crearProductoEnAPI(nuevoProducto);
-      setState(() {
-
-      });
+      setState(() {});
     }
   }
 
@@ -541,26 +558,34 @@ class _InventarioScreenState extends State<InventarioScreen> {
     final Producto? productoEditado = await showDialog<Producto>(
       context: context,
       builder: (context) => ProductoDialog(
-        producto: producto, // Pre-cargar datos existentes
+        producto: producto,
         categorias: _getCategorias(allProductos),
       ),
     );
 
     if (productoEditado != null) {
       await _actualizarProductoEnAPI(productoEditado);
-      setState(() {
-
-      });
+      setState(() {});
     }
   }
 
-  Future<void> _crearProductoEnAPI (Producto producto) async{
-    try{
+  void _mostrarDialogReabastecer(Producto producto) async {
+    final Map<String, dynamic>? reabastecimiento = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => ReabastecimientoDialog(producto: producto),
+    );
+
+    if (reabastecimiento != null) {
+      await _procesarReabastecimientoEnAPI(reabastecimiento);
+      setState(() {}); // Recargar la lista
+    }
+  }
+
+  Future<void> _crearProductoEnAPI(Producto producto) async {
+    try {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/productos'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'nombre': producto.nombre,
           'marca': producto.marca,
@@ -575,21 +600,24 @@ class _InventarioScreenState extends State<InventarioScreen> {
         }),
       );
 
-      if(response.statusCode == 201){
+      if (response.statusCode == 201) {
         print('Producto creado exitosamente');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Producto creado exitosamente'),
-          backgroundColor: Colors.green),
+          SnackBar(
+            content: Text('Producto creado exitosamente'),
+            backgroundColor: Colors.green,
+          ),
         );
-      }else{
+      } else {
         throw Exception('Error ${response.statusCode}');
       }
-    }catch(e){
+    } catch (e) {
       print('Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content:
-        Text('Error: no se pudo crear'),
-        backgroundColor: Colors.red,)
+        SnackBar(
+          content: Text('Error: no se pudo crear'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -598,9 +626,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
     try {
       final response = await http.put(
         Uri.parse('${ApiConfig.baseUrl}/productos/${producto.id}'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'nombre': producto.nombre,
           'marca': producto.marca,
@@ -631,6 +657,49 @@ class _InventarioScreenState extends State<InventarioScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: No se pudo actualizar el producto'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+  Future<void> _procesarReabastecimientoEnAPI(Map<String, dynamic> data) async {
+    try {
+      // DEBUG: Imprimir los datos que se van a enviar
+      print('Datos a enviar: ${jsonEncode(data)}');
+
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/reabastecimientos'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(data),
+      );
+
+      // DEBUG: Imprimir la respuesta del servidor
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${responseData['message']}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Mostrar el error específico del servidor
+        final errorData = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${errorData['error'] ?? 'Error desconocido'}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Exception: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al procesar reabastecimiento: $e'),
           backgroundColor: Colors.red,
         ),
       );
