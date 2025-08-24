@@ -31,7 +31,7 @@ class Reabastecimiento {
     required this.createdAt,
   });
 
-  factory Reabastecimiento.fromJson(Map<String, dynamic> json){
+  factory Reabastecimiento.fromJson(Map<String, dynamic> json) {
     return Reabastecimiento(
       id: json['id'],
       productoId: json['producto_id'],
@@ -39,7 +39,8 @@ class Reabastecimiento {
       marca: json['marca'] ?? 'Sin marca',
       modelo: json['modelo'],
       cantidadAgregada: json['cantidad_agregada'],
-      costoTotal: (json['costo_total'] ?? 0.0).toDouble(),
+      // 🔧 CORRECCIÓN: Parsear correctamente el costo
+      costoTotal: _parseDouble(json['costo_total']),
       reabastecimiento: json['reabastecimiento'] ?? false,
       devolucion: json['devolucion'] ?? false,
       ajusteManual: json['ajuste_manual'] ?? false,
@@ -47,6 +48,21 @@ class Reabastecimiento {
       notas: json['notas'],
       createdAt: DateTime.parse(json['created_at']),
     );
+  }
+
+  // 🔧 Método helper para parsear valores double
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (e) {
+        return 0.0;
+      }
+    }
+    return 0.0;
   }
 
   // Convertir a JSON (por si necesitas enviar datos de vuelta al servidor)
@@ -63,7 +79,6 @@ class Reabastecimiento {
       'notas': notas,
     };
   }
-
 
   // Getters para la UI
   String get tipoDisplay {
@@ -129,5 +144,4 @@ class Reabastecimiento {
 
   @override
   int get hashCode => id.hashCode;
-
 }
