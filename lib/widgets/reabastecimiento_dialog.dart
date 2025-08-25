@@ -23,7 +23,7 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
   int _cantidadAAgregar = 0;
   int _stockFinal = 0;
   double _costoUnitario = 0.0;
-  String _tipoReabastecimiento = 'reabastecimiento'; // reabastecimiento, devolucion, ajuste_manual
+  String _tipoReabastecimiento = 'compra';
 
   @override
   void initState() {
@@ -37,9 +37,27 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
 
   void _calcularStockFinal() {
     int cantidad = int.tryParse(_cantidadController.text) ?? 0;
+
+    print('🔍 Tipo seleccionado: $_tipoReabastecimiento');
+    print('🔍 Cantidad ingresada: $cantidad');
+    print('🔍 Stock actual: $_stockActual');
+
     setState(() {
       _cantidadAAgregar = cantidad;
-      _stockFinal = _stockActual + cantidad;
+
+      if (_tipoReabastecimiento == 'ajuste') {
+        // En ajuste manual, la cantidad ingresada ES el stock final
+        _stockFinal = cantidad;
+        print('🔍 AJUSTE: Stock final será: $_stockFinal');
+      } else if (_tipoReabastecimiento == 'devolucion') {
+        // En devolución, el stock NO cambia
+        _stockFinal = _stockActual;
+        print('🔍 DEVOLUCIÓN: Stock final queda igual: $_stockFinal');
+      } else {
+        // En compra, se suma al stock actual
+        _stockFinal = _stockActual + cantidad;
+        print('🔍 COMPRA: Stock final será: $_stockFinal');
+      }
     });
   }
 
@@ -62,10 +80,22 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
   void _calcularCostoTotal() {
     int cantidad = int.tryParse(_cantidadController.text) ?? 0;
 
-    if (cantidad > 0 && _costoUnitario > 0) {
-      setState(() {
-        _costoTotalController.text = (cantidad * _costoUnitario).toStringAsFixed(2);
-      });
+    if (cantidad > 0) {
+      if (_tipoReabastecimiento == 'compra') {
+        setState(() {
+          _costoTotalController.text = (cantidad * _costoUnitario)
+              .toStringAsFixed(2);
+        });
+      } else if (_tipoReabastecimiento == 'devolucion') {
+        setState(() {
+          double costoNegativo = -(cantidad * widget.producto.precioCompra);
+          _costoTotalController.text = costoNegativo.toStringAsFixed(2);
+        });
+      } else if (_tipoReabastecimiento == 'ajuste') {
+        setState(() {
+          _costoTotalController.text = '0.00';
+        });
+      }
     }
   }
 
@@ -91,11 +121,7 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.local_shipping,
-              color: Colors.white,
-              size: 28,
-            ),
+            Icon(Icons.local_shipping, color: Colors.white, size: 28),
             SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -226,9 +252,7 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
           SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: Text('Marca: ${widget.producto.marca}'),
-              ),
+              Expanded(child: Text('Marca: ${widget.producto.marca}')),
               Expanded(
                 child: Text('Modelo: ${widget.producto.modelo ?? 'N/A'}'),
               ),
@@ -237,9 +261,7 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
           SizedBox(height: 8),
           Row(
             children: [
-              Expanded(
-                child: Text('Categoría: ${widget.producto.categoria}'),
-              ),
+              Expanded(child: Text('Categoría: ${widget.producto.categoria}')),
               Expanded(
                 child: Text('Stock Mínimo: ${widget.producto.stockMinimo}'),
               ),
@@ -274,12 +296,14 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
               Expanded(
                 child: RadioListTile<String>(
                   title: Text('Compra'),
-                  subtitle: Text('Compra a proveedor'),
+                  subtitle: Text('Compra a proveedor (suma al stock)'),
                   value: 'compra',
                   groupValue: _tipoReabastecimiento,
                   onChanged: (value) {
                     setState(() {
                       _tipoReabastecimiento = value!;
+                      _calcularStockFinal(); // Recalcular al cambiar tipo
+                      _calcularCostoTotal();
                     });
                   },
                 ),
@@ -287,28 +311,34 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
               Expanded(
                 child: RadioListTile<String>(
                   title: Text('Devolución'),
-                  subtitle: Text('Producto devuelto'),
+                  subtitle: Text('Producto devuelto (no suma al stock)'),
                   value: 'devolucion',
                   groupValue: _tipoReabastecimiento,
                   onChanged: (value) {
                     setState(() {
                       _tipoReabastecimiento = value!;
+                      _calcularStockFinal();
+                      _calcularCostoTotal();
                     });
                   },
                 ),
               ),
+              Expanded(
+                  child: RadioListTile<String>(
+                    title: Text('Ajuste de Inventario'),
+                    subtitle: Text('Corrección manual (sin costo)'),
+                    value: 'ajuste',
+                    groupValue: _tipoReabastecimiento,
+                    onChanged: (value) {
+                      setState(() {
+                        _tipoReabastecimiento = value!;
+                        _calcularStockFinal();
+                        _calcularCostoTotal();
+                      });
+                    },
+                  ),
+              ),
             ],
-          ),
-          RadioListTile<String>(
-            title: Text('Ajuste de Inventario'),
-            subtitle: Text('Corrección manual'),
-            value: 'ajuste',
-            groupValue: _tipoReabastecimiento,
-            onChanged: (value) {
-              setState(() {
-                _tipoReabastecimiento = value!;
-              });
-            },
           ),
         ],
       ),
@@ -336,7 +366,9 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
           color: Colors.green.shade800,
         ),
         decoration: InputDecoration(
-          labelText: 'Cantidad a Agregar',
+          labelText: _tipoReabastecimiento == 'ajuste'
+              ? 'Stock Final Deseado'
+              : 'Cantidad a Agregar',
           hintText: '0',
           prefixIcon: Container(
             margin: EdgeInsets.all(12),
@@ -345,11 +377,7 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
               color: Colors.green.shade600,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              Icons.add_box,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: Icon(Icons.add_box, color: Colors.white, size: 20),
           ),
           suffixText: 'unidades',
           suffixStyle: TextStyle(
@@ -415,16 +443,36 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
             ],
           ),
           SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStockCard('Actual', _stockActual, Colors.blue),
-              Icon(Icons.add, color: Colors.grey.shade600),
-              _buildStockCard('A Agregar', _cantidadAAgregar, Colors.green),
-              Icon(Icons.arrow_forward, color: Colors.grey.shade600),
-              _buildStockCard('Final', _stockFinal, Colors.purple),
-            ],
-          ),
+
+          // Para ajuste manual, mostrar layout diferente
+          if (_tipoReabastecimiento == 'ajuste')
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStockCard('Actual', _stockActual, Colors.blue),
+                Icon(Icons.arrow_forward, color: Colors.grey.shade600),
+                _buildStockCard('Nuevo Stock', _cantidadAAgregar, Colors.purple),
+              ],
+            )
+          else
+          // Para compra y devolución, mostrar el layout original
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStockCard('Actual', _stockActual, Colors.blue),
+                Icon(
+                    _tipoReabastecimiento == 'devolucion' ? Icons.remove : Icons.add,
+                    color: Colors.grey.shade600
+                ),
+                _buildStockCard(
+                    _tipoReabastecimiento == 'devolucion' ? 'A Devolver' : 'A Agregar',
+                    _cantidadAAgregar,
+                    Colors.green
+                ),
+                Icon(Icons.arrow_forward, color: Colors.grey.shade600),
+                _buildStockCard('Final', _stockFinal, Colors.purple),
+              ],
+            ),
         ],
       ),
     );
@@ -499,13 +547,20 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
                   controller: _costoTotalController,
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}$')),
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r'^\d*\.?\d{0,2}$'),
+                    ),
                   ],
                   decoration: InputDecoration(
                     labelText: 'Costo Total',
                     hintText: '\$0.00',
-                    prefixIcon: Icon(Icons.receipt, color: Colors.orange.shade600),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    prefixIcon: Icon(
+                      Icons.receipt,
+                      color: Colors.orange.shade600,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   onChanged: (value) => _calcularCostoUnitario(),
                 ),
@@ -624,8 +679,12 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
         'devolucion': tipoFlags['devolucion']!,
         'ajuste_manual': tipoFlags['ajuste_manual']!,
 
-        'proveedor': _proveedorController.text.trim().isEmpty ? null : _proveedorController.text.trim(),
-        'notas': _notasController.text.trim().isEmpty ? null : _notasController.text.trim(),
+        'proveedor': _proveedorController.text.trim().isEmpty
+            ? null
+            : _proveedorController.text.trim(),
+        'notas': _notasController.text.trim().isEmpty
+            ? null
+            : _notasController.text.trim(),
 
         // Datos adicionales para mostrar en la UI (estos no se envían al servidor)
         'stock_anterior': _stockActual,
@@ -640,7 +699,9 @@ class _ReabastecimientoDialogState extends State<ReabastecimientoDialog> {
       print('  Banderas: ${tipoFlags.toString()}');
       print('  Producto ID: ${widget.producto.id}');
       print('  Cantidad: $_cantidadAAgregar');
-      print('  Costo total: ${double.tryParse(_costoTotalController.text) ?? 0.0}');
+      print(
+        '  Costo total: ${double.tryParse(_costoTotalController.text) ?? 0.0}',
+      );
 
       Navigator.of(context).pop(reabastecimiento);
     }

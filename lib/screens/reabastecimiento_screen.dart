@@ -142,7 +142,7 @@ class _ReabastecimientoScreenState extends State<ReabastecimientoScreen> {
                   _buildStatCard(
                     'Total',
                     filteredReabastecimientos.length.toString(),
-                    Colors.blue,
+                    Colors.green,
                   ),
                   _buildStatCard(
                     'Compras',
@@ -150,7 +150,7 @@ class _ReabastecimientoScreenState extends State<ReabastecimientoScreen> {
                         .where((r) => r.reabastecimiento)
                         .length
                         .toString(),
-                    Colors.green,
+                    Colors.purple,
                   ),
                   _buildStatCard(
                     'Devoluciones',
@@ -166,7 +166,7 @@ class _ReabastecimientoScreenState extends State<ReabastecimientoScreen> {
                         .where((r) => r.ajusteManual)
                         .length
                         .toString(),
-                    Colors.purple,
+                    Colors.blue,
                   ),
                 ],
               ),
